@@ -12,7 +12,7 @@ if (typeof __firebase_config !== 'undefined') {
     firebaseConfig = JSON.parse(__firebase_config);
     if (typeof __app_id !== 'undefined') appId = __app_id;
 } else {
-    const firebaseConfig = {
+    firebaseConfig = {
         apiKey: "AIzaSyDeUajicP8DQTeW1vub8uWHTnNkyO9yLjU",
         authDomain: "qada-tracker-54a0c.firebaseapp.com",
         projectId: "qada-tracker-54a0c",
