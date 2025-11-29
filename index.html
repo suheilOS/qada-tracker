@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qada Prayer Tracker (Synced)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+        :root {
+            --box-size: 28px;
+            --gap-size: 6px;
+            --group-gap: 24px;
+            --primary-color: #111;
+            --accent-color: #dc2626;
+            --bg-color: #f9fafb;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 40px;
+            background-color: var(--bg-color);
+            color: var(--primary-color);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            /* Blur content if login modal is active */
+            transition: filter 0.3s ease;
+        }
+        
+        body.auth-active .container {
+            filter: blur(5px);
+            pointer-events: none;
+        }
+
+        /* --- Header & Stats --- */
+        header {
+            position: sticky;
+            top: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            z-index: 10;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f3f4f6;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header-left h1 {
+            font-size: 24px;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        .header-left p {
+            margin: 4px 0 0;
+            color: #6b7280;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            background-color: #fbbf24; /* Amber for connecting */
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-indicator.online { background-color: #10b981; } /* Green */
+        .status-indicator.offline { background-color: #ef4444; } /* Red */
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--primary-color);
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* --- Grid Layout --- */
+        .tracker-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--group-gap);
+        }
+
+        .month-block {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: var(--gap-size);
+            width: fit-content;
+        }
+
+        .day-box {
+            width: var(--box-size);
+            height: var(--box-size);
+            border: 2px solid #e5e7eb;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            font-weight: 600;
+            color: #9ca3af;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            position: relative;
+            background: white;
+            user-select: none;
+        }
+
+        .day-box:hover {
+            border-color: #9ca3af;
+            transform: scale(1.05);
+        }
+
+        /* Completed State */
+        .day-box.completed {
+            background-color: #fee2e2;
+            border-color: var(--accent-color);
+            color: var(--accent-color);
+            text-decoration: line-through;
+        }
+        
+        /* The X mark */
+        .day-box.completed::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 120%;
+            height: 2px;
+            background-color: var(--accent-color);
+            transform: translate(-50%, -50%) rotate(-45deg);
+        }
+
+        .day-box.completed::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 120%;
+            height: 2px;
+            background-color: var(--accent-color);
+            transform: translate(-50%, -50%) rotate(45deg);
+        }
+
+        .day-box:nth-child(10n) {
+            background-color: #f9fafb;
+        }
+
+        .day-box[data-day="1"] {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            font-weight: 800;
+        }
+
+        /* --- Auth Modal --- */
+        #auth-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        body.auth-active #auth-modal {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            text-align: center;
+        }
+
+        .modal-content h2 { margin-top: 0; }
+        
+        .input-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #374151;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn:hover { opacity: 0.9; }
+        
+        .logout-btn {
+            font-size: 11px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-decoration: underline;
+            color: #6b7280;
+        }
+
+    </style>
+</head>
+<body>
+
+<!-- Login Modal -->
+<div id="auth-modal">
+    <div class="modal-content">
+        <h2>Welcome Back</h2>
+        <p style="color:#666; font-size:14px; margin-bottom:20px;">Sign in to sync your progress across devices.</p>
+        
+        <div class="input-group">
+            <label>Email</label>
+            <input type="email" id="email" placeholder="you@example.com">
+        </div>
+        <div class="input-group">
+            <label>Password</label>
+            <input type="password" id="password" placeholder="••••••••">
+        </div>
+        
+        <button class="btn" id="loginBtn">Sign In / Register</button>
+        <p id="authError" style="color:red; font-size:12px; margin-top:10px; display:none;"></p>
+    </div>
+</div>
+
+<div class="container">
+    <header>
+        <div class="header-left">
+            <h1>Qada Tracker</h1>
+            <p>
+                <span class="status-indicator" id="statusDot"></span>
+                <span id="statusText">Connecting...</span>
+            </p>
+        </div>
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-value" id="remainingCount">1680</span>
+                <span class="stat-label">Remaining</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="percentComplete">0%</span>
+                <span class="stat-label">Progress</span>
+            </div>
+            <button class="logout-btn" id="logoutBtn" style="display:none;">Sign Out</button>
+        </div>
+    </header>
+
+    <div id="grid-container" class="tracker-grid">
+        <!-- Javascript will inject boxes here -->
+    </div>
+</div>
+
+<!-- Firebase SDKs -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { 
+        getAuth, 
+        signInWithEmailAndPassword, 
+        createUserWithEmailAndPassword, 
+        onAuthStateChanged,
+        signOut,
+        signInWithCustomToken,
+        signInAnonymously
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { 
+        getFirestore, 
+        doc, 
+        setDoc, 
+        onSnapshot, 
+        collection 
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // --- CONFIGURATION ---
+    // 1. If running in Artifacts Preview, we use the injected config.
+    // 2. If hosting yourself (Vercel/Netlify), replace the "else" block with your real config.
+    let firebaseConfig;
+    let appId = 'default-app';
+    
+    if (typeof __firebase_config !== 'undefined') {
+        firebaseConfig = JSON.parse(__firebase_config);
+        if(typeof __app_id !== 'undefined') appId = __app_id;
+    } else {
+        // REPLACE THIS WITH YOUR OWN FIREBASE CONFIG FROM CONSOLE
+        firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "SENDER_ID",
+            appId: "APP_ID"
+        };
+        console.log("Using placeholder config. Please update script with real Firebase keys.");
+    }
+
+    // Initialize
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // State
+    const TOTAL_DAYS = 1680;
+    let completedDays = new Set();
+    let currentUser = null;
+    let unsubscribeSnapshot = null;
+
+    // DOM Elements
+    const gridContainer = document.getElementById('grid-container');
+    const remainingEl = document.getElementById('remainingCount');
+    const percentEl = document.getElementById('percentComplete');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const authModal = document.getElementById('auth-modal');
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const emailInput = document.getElementById('email');
+    const passInput = document.getElementById('password');
+    const authError = document.getElementById('authError');
+
+    // --- 1. AUTH LOGIC ---
+
+    // Handle "Artifacts" special auth vs Standard Auth
+    const initAuth = async () => {
+        // If we are in the Preview environment, use the special token
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+             await signInWithCustomToken(auth, __initial_auth_token);
+        } 
+        // Note: For your localhost/Vercel usage, the code will just wait for you to login manually via the Modal.
+    };
+
+    onAuthStateChanged(auth, (user) => {
+        currentUser = user;
+        if (user) {
+            // Logged In
+            document.body.classList.remove('auth-active');
+            logoutBtn.style.display = 'block';
+            statusText.textContent = 'Synced';
+            statusDot.className = 'status-indicator online';
+            
+            // Start listening to data
+            setupRealtimeListener(user.uid);
+        } else {
+            // Logged Out
+            document.body.classList.add('auth-active');
+            logoutBtn.style.display = 'none';
+            statusText.textContent = 'Waiting for Login...';
+            statusDot.className = 'status-indicator offline';
+            
+            // Clear grid
+            if(unsubscribeSnapshot) unsubscribeSnapshot();
+            completedDays.clear();
+            renderGridState(); // Re-render empty
+            updateStats();
+        }
+    });
+
+    // Login Button Action
+    loginBtn.addEventListener('click', async () => {
+        const email = emailInput.value;
+        const pass = passInput.value;
+        authError.style.display = 'none';
+        
+        try {
+            // Try login first
+            await signInWithEmailAndPassword(auth, email, pass);
+        } catch (error) {
+            if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+                // If user doesn't exist, try to create account (Simplified flow for you)
+                try {
+                    await createUserWithEmailAndPassword(auth, email, pass);
+                } catch (createError) {
+                    authError.textContent = createError.message;
+                    authError.style.display = 'block';
+                }
+            } else {
+                authError.textContent = error.message;
+                authError.style.display = 'block';
+            }
+        }
+    });
+
+    logoutBtn.addEventListener('click', () => signOut(auth));
+
+    // --- 2. FIRESTORE LOGIC ---
+
+    function setupRealtimeListener(userId) {
+        // Path: artifacts/{appId}/users/{userId}/data/qada
+        // We use a specific collection structure to comply with rules
+        const docRef = doc(db, 'artifacts', appId, 'users', userId, 'data', 'qada_progress');
+
+        unsubscribeSnapshot = onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                // We store as an array in DB, convert to Set for app logic
+                if (data.completedList) {
+                    completedDays = new Set(data.completedList);
+                    renderGridState(); // Update UI
+                    updateStats();
+                }
+            } else {
+                // Document doesn't exist yet (new user)
+                completedDays.clear();
+                renderGridState();
+                updateStats();
+            }
+        }, (error) => {
+            console.error("Sync Error:", error);
+            statusText.textContent = "Sync Error";
+            statusDot.className = "status-indicator offline";
+        });
+    }
+
+    async function toggleDay(dayNum, element) {
+        if (!currentUser) return;
+
+        // Optimistic UI Update (Update screen before DB confirms)
+        const wasCompleted = completedDays.has(dayNum);
+        
+        if (wasCompleted) {
+            completedDays.delete(dayNum);
+            element.classList.remove('completed');
+        } else {
+            completedDays.add(dayNum);
+            element.classList.add('completed');
+        }
+        updateStats();
+
+        // Send to Firebase
+        const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'data', 'qada_progress');
+        try {
+            // We save the Set as an Array
+            await setDoc(docRef, { 
+                completedList: Array.from(completedDays),
+                lastUpdated: new Date()
+            }, { merge: true });
+        } catch (err) {
+            console.error("Failed to save:", err);
+            // Revert UI if failed
+            if(wasCompleted) {
+                completedDays.add(dayNum);
+                element.classList.add('completed');
+            } else {
+                completedDays.delete(dayNum);
+                element.classList.remove('completed');
+            }
+            updateStats();
+            alert("Sync failed. Check connection.");
+        }
+    }
+
+    // --- 3. UI GENERATION ---
+
+    function initGrid() {
+        // Only run once to generate HTML structure
+        let currentDay = TOTAL_DAYS;
+        const totalBlocks = Math.ceil(TOTAL_DAYS / 30);
+
+        for (let b = 0; b < totalBlocks; b++) {
+            const blockDiv = document.createElement('div');
+            blockDiv.className = 'month-block';
+
+            for (let i = 0; i < 30; i++) {
+                if (currentDay <= 0) break;
+
+                const dayNum = currentDay; 
+                const box = document.createElement('div');
+                box.className = 'day-box';
+                box.textContent = dayNum;
+                box.id = `box-${dayNum}`; // Add ID for easy lookup
+                box.dataset.day = dayNum;
+
+                // Interaction
+                box.addEventListener('click', () => toggleDay(dayNum, box));
+
+                blockDiv.appendChild(box);
+                currentDay--;
+            }
+            gridContainer.appendChild(blockDiv);
+        }
+    }
+
+    function renderGridState() {
+        // Update all boxes based on current 'completedDays' Set
+        // This is efficient enough for 1680 elements
+        document.querySelectorAll('.day-box').forEach(box => {
+            const dayNum = parseInt(box.dataset.day);
+            if (completedDays.has(dayNum)) {
+                box.classList.add('completed');
+            } else {
+                box.classList.remove('completed');
+            }
+        });
+    }
+
+    function updateStats() {
+        const completedCount = completedDays.size;
+        const remaining = TOTAL_DAYS - completedCount;
+        const percent = ((completedCount / TOTAL_DAYS) * 100).toFixed(1);
+
+        remainingEl.textContent = remaining;
+        percentEl.textContent = `${percent}%`;
+        document.title = `${remaining} Left - Qada Tracker`;
+    }
+
+    // --- BOOTSTRAP ---
+    initGrid(); // Draw empty grid
+    initAuth(); // Check for existing auth
+
+</script>
+
+</body>
+</html>
