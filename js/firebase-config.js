@@ -10,16 +10,15 @@ export let appId = 'default-app';
 
 if (typeof __firebase_config !== 'undefined') {
     firebaseConfig = JSON.parse(__firebase_config);
-    if(typeof __app_id !== 'undefined') appId = __app_id;
+    if (typeof __app_id !== 'undefined') appId = __app_id;
 } else {
-    // REPLACE THIS WITH YOUR OWN FIREBASE CONFIG FROM CONSOLE
-    firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_PROJECT.firebaseapp.com",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_PROJECT.appspot.com",
-        messagingSenderId: "SENDER_ID",
-        appId: "APP_ID"
+    const firebaseConfig = {
+        apiKey: "AIzaSyDeUajicP8DQTeW1vub8uWHTnNkyO9yLjU",
+        authDomain: "qada-tracker-54a0c.firebaseapp.com",
+        projectId: "qada-tracker-54a0c",
+        storageBucket: "qada-tracker-54a0c.firebasestorage.app",
+        messagingSenderId: "245290433886",
+        appId: "1:245290433886:web:9c0c5f39786d66dad463cf"
     };
     console.log("Using placeholder config. Please update script with real Firebase keys.");
 }
