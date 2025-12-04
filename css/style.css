@@ -142,34 +142,29 @@ header {
 }
 
 /* Completed State */
+/* Completed State */
 .day-box.completed {
-    background-color: #fee2e2;
-    border-color: var(--accent-color);
-    color: var(--accent-color);
-    text-decoration: line-through;
+    background-color: #dcfce7;
+    border-color: #16a34a;
+    color: #16a34a;
 }
 
-/* The X mark */
+/* The Checkmark */
 .day-box.completed::after {
     content: '';
     position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 120%;
-    height: 2px;
-    background-color: var(--accent-color);
-    transform: translate(-50%, -50%) rotate(-45deg);
+    left: 9px;
+    top: 5px;
+    width: 6px;
+    height: 12px;
+    border: solid #16a34a;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    background-color: transparent;
 }
 
 .day-box.completed::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 120%;
-    height: 2px;
-    background-color: var(--accent-color);
-    transform: translate(-50%, -50%) rotate(45deg);
+    content: none;
 }
 
 .day-box:nth-child(10n) {
