@@ -4,13 +4,13 @@ A minimalist web application to track and manage missed prayers (Qada) with real
 
 ## Features
 
-- 📊 **Visual Progress Tracking** - Grid-based interface showing all days at a glance
-- ☁️ **Cloud Sync** - Real-time synchronization using Firebase Firestore
-- 🔐 **User Authentication** - Secure email/password authentication with Firebase Auth
-- 📱 **Responsive Design** - Clean, modern UI that works on all devices
-- ⚡ **Real-time Updates** - Instant sync across all logged-in devices
-- 🎯 **Progress Statistics** - Track remaining days and completion percentage
-- ✅ **Simple Interface** - Click to mark days as completed
+- **Visual Progress Tracking** - Grid-based interface showing all days at a glance
+- **Cloud Sync** - Real-time synchronization using Firebase Firestore
+- **User Authentication** - Secure email/password authentication with Firebase Auth
+- **Responsive Design** - Clean, modern UI that works on all devices
+- **Real-time Updates** - Instant sync across all logged-in devices
+- **Progress Statistics** - Track remaining days and completion percentage
+- **Simple Interface** - Click to mark days as completed
 
 ## Tech Stack
 
